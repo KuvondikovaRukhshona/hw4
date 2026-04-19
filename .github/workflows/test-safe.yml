@@ -1,0 +1,77 @@
+name: Test Homework (Safe for Forks)
+
+on:
+  pull_request_target:
+    branches: [ main, master ]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout PR code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.26'
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Run tests
+      id: test-run
+      run: |
+        if go test -v ./... > test-output.txt 2>&1; then
+          echo "test_status=success" >> $GITHUB_OUTPUT
+        else
+          echo "test_status=failure" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Post test results as comment
+      if: github.event_name == 'pull_request_target'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const testOutput = fs.readFileSync('test-output.txt', 'utf8');
+          const status = '${{ steps.test-run.outputs.test_status }}';
+
+          const icon = status === 'success' ? '✅' : '❌';
+          const title = status === 'success' ? 'All tests passed!' : 'Some tests failed';
+
+          const body = `## ${icon} Test Results: ${title}
+
+          <details>
+          <summary>Test Output</summary>
+
+          \`\`\`
+          ${testOutput.substring(0, 60000)}
+          \`\`\`
+
+          </details>`;
+
+          await github.rest.issues.createComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            body: body
+          });
