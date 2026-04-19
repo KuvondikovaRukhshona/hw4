@@ -107,7 +107,7 @@ jobs:
         for test in "${required_tests[@]}"; do
           if go test -run "^${test}$" ./... > /dev/null 2>&1; then
             echo "✅ $test - PASSED" | tee -a test_check.txt
-            ((required_passed++))
+            required_passed=$((required_passed + 1))
           else
             echo "❌ $test - FAILED" | tee -a test_check.txt
             all_required_pass=false
@@ -122,7 +122,7 @@ jobs:
         for test in "${bonus_tests[@]}"; do
           if go test -run "^${test}" ./... > /dev/null 2>&1; then
             echo "✅ $test - PASSED" | tee -a test_check.txt
-            ((bonus_passed++))
+            bonus_passed=$((bonus_passed + 1))
           else
             echo "⚠️ $test - NOT IMPLEMENTED" | tee -a test_check.txt
           fi

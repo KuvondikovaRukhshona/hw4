@@ -200,8 +200,8 @@ func TestConverter_edge_cases(t *testing.T) {
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) &&
 		(s == substr ||
-		 len(s) > 0 && len(substr) > 0 &&
-		 findSubstring(s, substr) != -1)
+			len(s) > 0 && len(substr) > 0 &&
+				findSubstring(s, substr) != -1)
 }
 
 func findSubstring(s, substr string) int {
